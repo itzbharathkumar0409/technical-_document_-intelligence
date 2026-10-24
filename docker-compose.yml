@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: dociq-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dociq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dociq_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-dociq}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dociq"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dociq:dociq_secret@db:5432/dociq
+      DATABASE_URL_SYNC: postgresql://dociq:dociq_secret@db:5432/dociq
+      SECRET_KEY: ${SECRET_KEY:-change-me-to-a-random-64-char-string-in-production}
+      CORS_ORIGINS: http://localhost:3000
+      STORAGE_LOCAL_PATH: /app/storage/uploads
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_MODEL: ${LLM_MODEL:-llama3.1}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-local}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-384}
+      RERANKER_ENABLED: ${RERANKER_ENABLED:-false}
+    volumes:
+      - ./backend:/app
+      - uploads:/app/storage/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+
+  # Optional: Ollama for local LLM
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    profiles:
+      - with-ollama
+
+volumes:
+  pgdata:
+  uploads:
+  ollama_data:
