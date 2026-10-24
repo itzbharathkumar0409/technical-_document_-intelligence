@@ -152,7 +152,8 @@ async def upload_document(
         status="pending",
     )
     db.add(job)
-    await db.flush()
+    await db.commit()
+    await db.refresh(document)
 
     # Trigger background processing
     from app.services.ingestion import process_document

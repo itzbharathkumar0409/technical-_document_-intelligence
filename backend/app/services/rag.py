@@ -183,7 +183,8 @@ async def generate_answer(
 
     # Check relevance threshold
     max_score = max(
-        (p.get("rrf_score", 0) or p.get("score", 0)) for p in retrieved_passages
+        (p.get("score") if p.get("score") is not None else (p.get("rrf_score", 0) * 30))
+        for p in retrieved_passages
     )
     if max_score < settings.relevance_threshold:
         return {

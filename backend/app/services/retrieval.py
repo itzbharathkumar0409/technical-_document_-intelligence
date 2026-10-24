@@ -29,7 +29,7 @@ async def vector_search(
     embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
     doc_filter = ""
-    params = {"user_id": str(user_id), "top_k": top_k, "embedding": embedding_str}
+    params = {"user_id": user_id, "top_k": top_k, "embedding": embedding_str}
 
     if document_ids:
         doc_id_list = ",".join(f"'{str(d)}'" for d in document_ids)
@@ -39,13 +39,13 @@ async def vector_search(
         SELECT dc.id, dc.document_id, dc.content, dc.page_number,
                dc.section_path, dc.chunk_index, dc.token_count,
                d.original_filename,
-               1 - (dc.embedding <=> :embedding::vector) as similarity
+               1 - (dc.embedding <=> :embedding\\:\\:vector) as similarity
         FROM document_chunks dc
         JOIN documents d ON d.id = dc.document_id
         WHERE dc.user_id = :user_id
         {doc_filter}
         AND dc.embedding IS NOT NULL
-        ORDER BY dc.embedding <=> :embedding::vector
+        ORDER BY dc.embedding <=> :embedding\\:\\:vector
         LIMIT :top_k
     """)
 
@@ -85,7 +85,7 @@ async def keyword_search(
         return []
 
     doc_filter = ""
-    params = {"user_id": str(user_id), "top_k": top_k, "query": ts_query}
+    params = {"user_id": user_id, "top_k": top_k, "query": ts_query}
 
     if document_ids:
         doc_id_list = ",".join(f"'{str(d)}'" for d in document_ids)

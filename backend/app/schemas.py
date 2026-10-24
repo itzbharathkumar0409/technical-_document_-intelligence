@@ -122,7 +122,7 @@ class AnswerResponse(BaseModel):
     citations: list[CitationDetail]
     insufficient_evidence: bool = False
     latency_breakdown: dict  # total_ms, retrieval_ms, generation_ms
-    model_config_dict: ConfigDict = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MessageResponse(BaseModel):
