@@ -46,9 +46,11 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
     setLoading(true);
     try {
       const res = await api.listDocuments(1, 100, statusFilter, search);
-      setDocuments(res.items);
+      const docs = res?.documents || res?.items || [];
+      setDocuments(docs);
     } catch (err: any) {
       console.error(err);
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,8 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   // Polling for processing documents
   useEffect(() => {
     if (!isAuthenticated) return;
-    const hasProcessing = documents.some(
+    const currentDocs = documents || [];
+    const hasProcessing = currentDocs.some(
       (d) => d.status === "pending" || d.status === "processing"
     );
     if (!hasProcessing) return;
@@ -69,7 +72,10 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
     const interval = setInterval(() => {
       api
         .listDocuments(1, 100, statusFilter, search)
-        .then((res) => setDocuments(res.items))
+        .then((res) => {
+          const docs = res?.documents || res?.items || [];
+          setDocuments(docs);
+        })
         .catch(() => {});
     }, 2500);
 
@@ -357,12 +363,12 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
               Sign In / Register
             </button>
           </div>
-        ) : loading && documents.length === 0 ? (
+        ) : loading && (documents || []).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400 text-xs">
             <Loader2 className="h-6 w-6 animate-spin text-teal-400" />
             <span>Loading documents from Supabase...</span>
           </div>
-        ) : documents.length === 0 ? (
+        ) : (documents || []).length === 0 ? (
           <div className="text-center py-16 p-4">
             <FileText className="mx-auto h-8 w-8 text-slate-600 mb-2" />
             <h4 className="text-sm font-semibold text-slate-300">No documents uploaded yet</h4>
@@ -385,7 +391,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                {documents.map((doc) => (
+                {(documents || []).map((doc) => (
                   <tr key={doc.id} className="hover:bg-slate-800/30 transition-colors">
                     <td className="py-3.5 px-4 font-medium text-white max-w-xs truncate">
                       <div className="flex items-center gap-2.5">

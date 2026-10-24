@@ -77,9 +77,11 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
   const loadDocuments = async () => {
     try {
       const res = await api.listDocuments(1, 100);
-      setDocuments(res.items.filter((d) => d.status === "completed"));
+      const docs = res?.documents || res?.items || [];
+      setDocuments(docs.filter((d) => d.status === "completed"));
     } catch (err) {
       console.error(err);
+      setDocuments([]);
     }
   };
 

@@ -55,9 +55,14 @@ class DocumentResponse(BaseModel):
 
 class DocumentListResponse(BaseModel):
     documents: list[DocumentResponse]
+    items: Optional[list[DocumentResponse]] = None
     total: int
     page: int
     page_size: int
+
+    def model_post_init(self, __context):
+        if self.items is None:
+            self.items = self.documents
 
 
 class DocumentStatusResponse(BaseModel):
