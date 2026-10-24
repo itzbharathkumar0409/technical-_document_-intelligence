@@ -28,9 +28,13 @@ export const ChunkViewerModal: React.FC<ChunkViewerModalProps> = ({
       setError(null);
       try {
         const data = await api.getDocumentChunks(document.id);
-        if (isMounted) setChunks(data);
+        const chunkList = Array.isArray(data) ? data : (data as any)?.chunks || [];
+        if (isMounted) setChunks(chunkList);
       } catch (err: any) {
-        if (isMounted) setError(err.message || "Failed to load chunks");
+        if (isMounted) {
+          setError(err.message || "Failed to load chunks");
+          setChunks([]);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -63,7 +67,7 @@ export const ChunkViewerModal: React.FC<ChunkViewerModalProps> = ({
               <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                 Document Chunks
                 <span className="text-xs font-normal text-slate-400">
-                  ({chunks.length} chunks indexed)
+                  ({(chunks || []).length} chunks indexed)
                 </span>
               </h3>
               <p className="text-xs text-slate-400 truncate max-w-md">
@@ -94,14 +98,14 @@ export const ChunkViewerModal: React.FC<ChunkViewerModalProps> = ({
             </div>
           )}
 
-          {!loading && !error && chunks.length === 0 && (
+          {!loading && !error && (chunks || []).length === 0 && (
             <div className="text-center py-12 text-slate-400 text-xs">
               No chunks generated for this document yet.
             </div>
           )}
 
           {!loading &&
-            chunks.map((chunk) => (
+            (chunks || []).map((chunk) => (
               <div
                 key={chunk.id}
                 className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-4 space-y-3 transition-colors hover:border-slate-700"
